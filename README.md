@@ -1,14 +1,45 @@
-# Welcome to your CDK TypeScript project!
+## Example
+This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream by the process order microservice and the records are then consumed by the invoice and fulfillment microservices. You would use a pattern similar to this when you required realtime or near realtime data record processing.
 
-This is a blank project for TypeScript development with CDK.
+![architecture](./images/architecture_1.png "Architecture")
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Setup
 
-## Useful commands
+1. The following prerequisities are required for this example
+  
+```bash
+npm install -g typescript
+npm install -g aws-cdk
+```
 
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
+Install Jupyter Notebook following instructions on this ['site'](https://jupyter.org/install).
+
+2. Since this CDK project uses ['Assests'](https://docs.aws.amazon.com/cdk/latest/guide/assets.html), you might need to run the following command to provision resources the AWS CDK will need to perform the deployment.
+
+```bash 
+cdk bootstrap
+```
+
+2. Install the dependencies
+
+```bash
+npm install
+```
+
+3. Execute **cdk synth** to synthesize as AWS CloudFormation template
+
+```bash
+cdk synth
+```
+
+4. Execute **cdk deploy** to deploy the template and build the stack
+
+```bash
+cdk deploy
+```
+5. Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions and execute the query.
+
+6. Check the dynamoDB table to view the records
+
+## Cleanup Commands
+1. Execute command: **cdk destroy**
