@@ -39,7 +39,7 @@ cdk deploy
 ```
 5. Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions and execute the query.
 
-6. Check the dynamoDB table to view the records
+6. Check the dynamoDB table to view the records and S3 bucket to view the invoices
 
 ## Cleanup Commands
 1. Execute command: **cdk destroy**
