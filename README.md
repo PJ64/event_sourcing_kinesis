@@ -1,8 +1,28 @@
 ## Example
-This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream by the process order microservice and the records are then consumed by the invoice and fulfillment microservices. You would use a pattern similar to this when you required realtime or near realtime data record processing.
+This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream using a Lambda function which is integrated with Amazon API Gateway. The Lambda function takes the input from the gateway and writes it to an Amazon Kinesis data stream. 
+
+The event triggers 2 additional Lambda functions. The invoice function writes the event object to an Amazon S3 bucket. The fulfillment function writes the event data to Amazon DynamoDB. You would use a pattern or something similar, when you required realtime or near realtime data record processing.
+
+There are 3 additional functions used to return items from Amazon DynamoDB or objects from Amazon S3.
 
 ![architecture](./images/architecture_1.png "Architecture")
 
+1. The first script creates items (orders) and posts them to an Amazon API Gateway which triggers a Lambda function. The Lambda function does two things. 
+   
+    a. It writes each item to an Amazon DynamoDB table (event_sourcing_kinesis_order table)
+
+    b. It writes the item to an Amazon Kinesis Stream
+
+    c. The Kinesis Stream triggers 2 Lambda functions. Both functions pull the records from the stream, one function writes each record to an Amazon S3 bucket, while the other function writes each record to a Amazon DynamoDB table.
+
+2. The second script is a json formatter which renders json data into a readable format.
+   
+3. The third script retrieves an item from the event_sourcing_kinesis_order table using the parition key (accountid) and sort key (vendorid)
+   
+4. The fourth script retrieves an item from the event_sourcing_kinesis_fulfillment table using the parition key (accountid) and sort key (vendorid)
+
+5. The final script makes a call to Amazon ApiGateway service which in turn calls a triggers a function that generates a pre-signed url for an S3 object.
+   
 ## Setup
 
 1. The following prerequisities are required for this example

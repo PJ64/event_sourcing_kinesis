@@ -5,9 +5,9 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger()
 #logger.setLevel(logging.INFO)
 
-s3 = boto3.resource('s3')
-bucket = s3.Bucket(os.environ.get('BUCKETNAME'))
-stream_name = (os.environ.get('STREAM'))
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ.get('TABLENAME'))
+stream_name = os.environ.get('STREAM')
 
 def lambda_handler(event, context):
     kinesis_client = boto3.client('kinesis')
@@ -33,19 +33,21 @@ def lambda_handler(event, context):
 
 def WriteRecord(record):
     data = json.loads(record["Data"])
-    orderid = data["order"]["orderid"]  
-    message = json.dumps(data)    
-    utf_data = message.encode("utf-8")
-    path = 'orderid_' + orderid + '.json'
-
     try:
-        bucket.put_object(
-            ContentType='application/json',
-            Key=path,
-            Body=utf_data,
-            Metadata={'orderid':orderid}
-        )
-        logger.info("PutObject to bucket %s.",bucket)    
+        response = table.put_item(
+            Item={
+                'accountid': data['order']['accountid'],
+                'vendorid': data['order']["vendorid"],
+                'orderdate':data['order']["orderdate"],
+                'details':{
+                    'coffeetype': data['order']['details']['coffeetype'],
+                    'coffeesize': data['order']['details']["coffeesize"],
+                    'unitprice': data['order']['details']["unitprice"],
+                    'quantity': data['order']['details']["quantity"]
+                },
+            })
+        logger.info("PutItem %s to table %s.",data,table)                    
+
     except ClientError:
-        logger.exception("Couldn't PutObject to bucket %s.",bucket)
+        logger.exception("Couldn't PutItem %s to table %s",data,table)
         raise
