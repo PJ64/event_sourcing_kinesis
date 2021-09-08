@@ -57,7 +57,7 @@ cdk synth
 ```bash
 cdk deploy
 ```
-5. Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions and execute the query.
+5. Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions.
 
 6. Check the dynamoDB table to view the records and S3 bucket to view the invoices
 
