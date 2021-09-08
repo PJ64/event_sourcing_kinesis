@@ -5,7 +5,7 @@ The event triggers 2 additional Lambda functions. The invoice function writes th
 
 There are 3 additional functions used to return items from Amazon DynamoDB or objects from Amazon S3.
 
-![architecture](./images/architecture_1.png "Architecture")
+![architecture](./images/architecture_2.png "Architecture")
 
 1. The first script creates items (orders) and posts them to an Amazon API Gateway which triggers a Lambda function. The Lambda function does two things. 
    
