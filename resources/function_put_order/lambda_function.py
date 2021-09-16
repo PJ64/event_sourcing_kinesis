@@ -1,47 +1,54 @@
 from __future__ import print_function
-import boto3, json
-import logging
-import os
+import boto3, json, logging, os
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
+#logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ.get('TABLENAME'))
-stream_name = (os.environ.get('STREAM'))
+stream_name = os.environ.get('STREAM')
 
 def lambda_handler(event, context):
-    body = json.loads(event['body'])
-    item = { 
-                'accountid': body['order']['accountid'],
-                'vendorid': body['order']["vendorid"],
-                'orderdate':body['order']["orderdate"],
-                'details':{
-                    'coffeetype': body['order']['details']['coffeetype'],
-                    'coffeesize': body['order']['details']["coffeesize"],
-                    'unitprice': body['order']['details']["unitprice"],
-                    'quantity': body['order']['details']["quantity"]
-                },
-            }
-    try:
-        response = table.put_item(Item = item)
-        logger.info("PutItem %s to table %s.",body,table)
-        
-        k_client = boto3.client('kinesis')
-        put_response = k_client.put_record(StreamName=stream_name,Data=json.dumps(body), PartitionKey="1")
+    kinesis_client = boto3.client('kinesis')
+    response = kinesis_client.describe_stream(StreamName=stream_name)
+    shard_id = response['StreamDescription']['Shards'][0]['ShardId']
+    shard_iterator = kinesis_client.get_shard_iterator(StreamName=stream_name,
+	                                                      ShardId=shard_id,
+	                                                      ShardIteratorType="TRIM_HORIZON")
+    iterator = shard_iterator['ShardIterator']
+    record_response = kinesis_client.get_records(
+        ShardIterator=iterator,
+        Limit=1)
+    while 'NextShardIterator' in record_response:
+        # read up to 100 records at a time from the shard number
+        record_response = kinesis_client.get_records(
+            ShardIterator=record_response['NextShardIterator'],
+            Limit=1
+        )
+        # Print only if we have something
+        if(record_response['Records']):
+            for record in record_response['Records']:
+                WriteRecord(record)
 
-        logger.info("PutRecord %s to stream %s.",body,table)
-        logger.info(put_response)
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-            },
-            'body': json.dumps(response)
-        }
+def WriteRecord(record):
+    data = json.loads(record["Data"])
+    print(data)
+    try:
+        response = table.put_item(
+            Item={
+                'accountid': data['order']['accountid'],
+                'vendorid': data['order']["vendorid"],
+                'orderdate':data['order']["orderdate"],
+                'details':{
+                    'coffeetype': data['order']['details']['coffeetype'],
+                    'coffeesize': data['order']['details']["coffeesize"],
+                    'unitprice': data['order']['details']["unitprice"],
+                    'quantity': data['order']['details']["quantity"]
+                },
+            })
+        logger.info("PutItem %s to table %s.",data,table)                    
 
     except ClientError:
-        logger.exception("Couldn't PutItem %s to table %s",body,table)
+        logger.exception("Couldn't PutItem %s to table %s",data,table)
         raise

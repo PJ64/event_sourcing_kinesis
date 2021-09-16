@@ -17,6 +17,32 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       shardCount: 1
     });
 
+    //IAM role - Put Order into the stream
+    const role_lambda_stream_put = new Role(this, 'role_lambda_stream_put', {
+      roleName: 'event_sourcing_kinesis_stream_put',
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+      ]
+    });
+    role_lambda_stream_put.addToPolicy(new PolicyStatement({
+      resources: [stream.streamArn],
+      actions: ["kinesis:PutRecord"],
+    }));
+
+    //Lambda function - Order stream
+    const lambda_stream_put = new Function(this, "lambda_stream_put", {
+      runtime: Runtime.PYTHON_3_8,
+      code: Code.fromAsset("resources/function_put_stream"),
+      handler: "lambda_function.lambda_handler",
+      functionName: "event_sourcing_kinesis_stream_put",
+      tracing: Tracing.ACTIVE,
+      role: role_lambda_stream_put,
+      environment: {
+        'STREAM': stream.streamName,
+      }
+    });
+        
     //DynamoDB table - ProcessOrder
     const processorder_table = new Table(this, "table-processorder",
       {
@@ -32,7 +58,7 @@ export class EventSourcingKinesisStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
-    //IAM role - Put Order
+    //IAM role - Put Order (ProcessOrder)
     const role_lambda_order_put = new Role(this, 'role_lambda_order_put', {
       roleName: 'event_sourcing_kinesis_order_put',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
@@ -42,7 +68,7 @@ export class EventSourcingKinesisStack extends cdk.Stack {
     });
     role_lambda_order_put.addToPolicy(new PolicyStatement({
       resources: [processorder_table.tableArn, stream.streamArn],
-      actions: ["dynamodb:PutItem", "kinesis:PutRecord"],
+      actions: ["dynamodb:PutItem", "kinesis:GetRecord"],
     }));
 
     const role_lambda_order_get = new Role(this, 'role_lambda_order_get', {
@@ -57,7 +83,7 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       actions: [ "dynamodb:GetItem"],
     }));
 
-    //Lambda function - Put Order
+    //Lambda function - Put Order (ProcessOrder)
     const lambda_order_put = new Function(this, "lambda_order_put", {
       runtime: Runtime.PYTHON_3_8,
       code: Code.fromAsset("resources/function_put_order"),
@@ -70,6 +96,10 @@ export class EventSourcingKinesisStack extends cdk.Stack {
         'STREAM': stream.streamName,
       }
     });
+    lambda_order_put.addEventSource(new KinesisEventSource(stream, {
+      batchSize: 1,
+      startingPosition: StartingPosition.TRIM_HORIZON
+    }))
 
     const lambda_order_get = new Function(this, "lambda_order_get", {
       runtime: Runtime.PYTHON_3_7,
@@ -144,77 +174,6 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       }
     });
 
-    //Microservice Fulfillment
-    //DynamoDB table - Fulfillment
-    const fulfillment_table = new Table(this, "table-fulfillment",
-      {
-        tableName: "event_sourcing_kinesis_fulfillment",
-        partitionKey: {
-          name: 'accountid',
-          type: AttributeType.STRING
-        },
-        sortKey: {
-          name: 'vendorid',
-          type: AttributeType.STRING
-        },
-        removalPolicy: cdk.RemovalPolicy.DESTROY
-    });
-
-    //IAM role - Fulfillment
-    const role_lambda_fulfillment_put = new Role(this, 'role_lambda_fulfillment_put', {
-      roleName: 'event_sourcing_kinesis_fulfillment_put',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
-      ]
-    });
-    role_lambda_fulfillment_put.addToPolicy(new PolicyStatement({
-      resources: [fulfillment_table.tableArn, stream.streamArn],
-      actions: ["dynamodb:PutItem","kinesis:GetRecord"],
-    }));
-
-    const role_lambda_fulfillment_get = new Role(this, "role_lambda_fulfillment_get",{
-      roleName: "event_sourcing_kinesis_fulfillment_get",
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
-      ]
-    });
-    role_lambda_fulfillment_get.addToPolicy(new PolicyStatement({
-      resources: [fulfillment_table.tableArn],
-      actions: ['dynamodb:GetItem'],
-    }));
-
-    //Lambda function - Fulfillment
-    const lambda_fulfillment_put = new Function(this, "lambda_fulfillment_put", {
-      runtime: Runtime.PYTHON_3_8,
-      code: Code.fromAsset("resources/function_put_fulfillment"),
-      handler: "lambda_function.lambda_handler",
-      functionName: "event_sourcing_kinesis_fulfillment_put",
-      tracing: Tracing.ACTIVE,
-      role: role_lambda_fulfillment_put,
-      environment: {
-        'TABLENAME': fulfillment_table.tableName,
-        'STREAM': stream.streamName,
-      }
-    });
-    lambda_fulfillment_put.addEventSource(new KinesisEventSource(stream,{
-      batchSize: 100,
-      startingPosition: StartingPosition.TRIM_HORIZON
-    }));
-
-    const lambda_fulfillment_get = new Function(this, "lambda_fulfillment_get", {
-      runtime: Runtime.PYTHON_3_8,
-      code: Code.fromAsset("resources/function_get_fulfillment"),
-      handler: "lambda_function.lambda_handler",
-      functionName: "event_sourcing_kinesis_fulfillment_get",
-      tracing: Tracing.ACTIVE,
-      role: role_lambda_fulfillment_get,
-      environment: {
-        'TABLENAME': fulfillment_table.tableName,
-      }
-    });
-
     //REST Api with integrated  Lambda function
     var api = new RestApi(this, "OrderApi", {
       restApiName: "event_sourcing_kinesis",
@@ -224,22 +183,18 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       }
     });
 
-    var lambda_post_order_integration = new LambdaIntegration(lambda_order_put, {
+    var lambda_stream_put_integration = new LambdaIntegration(lambda_stream_put, {
       requestTemplates: {
         ["application/json"]: "{ \"statusCode\": \"200\" }"
       }
     });
 
     var lambda_get_order_integration = new LambdaIntegration(lambda_order_get);
-    var lambda_get_fulfillment_integration = new LambdaIntegration(lambda_fulfillment_get);
     var lambda_get_invoice_integration = new LambdaIntegration(lambda_invoice_get);
 
     var api_order_resource = api.root.addResource("order");
-    api_order_resource.addMethod("POST", lambda_post_order_integration);
+    api_order_resource.addMethod("POST", lambda_stream_put_integration);
     api_order_resource.addMethod("GET", lambda_get_order_integration);
-
-    var api_fulfillment_resource = api.root.addResource("fulfillment");
-    api_fulfillment_resource.addMethod("GET", lambda_get_fulfillment_integration);
 
     var api_invoice_resource = api.root.addResource("invoice");
     api_invoice_resource.addMethod("GET", lambda_get_invoice_integration);

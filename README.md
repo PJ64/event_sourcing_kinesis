@@ -1,27 +1,23 @@
 ## Example
-This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream using a Lambda function which is integrated with Amazon API Gateway. The Lambda function takes the input from the gateway and writes it to an Amazon Kinesis data stream. 
+This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream using a Lambda function which is integrated with Amazon API Gateway. The Lambda function takes the input from the gateway and writes it to an Amazon Kinesis data stream.
 
-The event triggers 2 additional Lambda functions. The invoice function writes the event object to an Amazon S3 bucket. The fulfillment function writes the event data to Amazon DynamoDB. You would use a pattern or something similar, when you required realtime or near realtime data record processing.
+The event triggers 2 additional Lambda functions. The invoice function writes the event object to an Amazon S3 bucket, and the function writes the event data to Amazon DynamoDB. You would use this pattern or something similar, when you require real-time or near real-time data record processing.
 
-There are 3 additional functions used to return items from Amazon DynamoDB or objects from Amazon S3.
+There are 2 additional functions, one returns the orders from Amazon DynamoDB, the other returns objects from the Amazon S3 bucket.
 
-![architecture](./images/architecture_2.png "Architecture")
+![architecture](./images/architecture_4.png "Architecture")
 
-1. The first script creates items (orders) and posts them to an Amazon API Gateway which triggers a Lambda function. The Lambda function does two things. 
-   
-    a. It writes each item to an Amazon DynamoDB table (event_sourcing_kinesis_order table)
+**Jupyter Notebook Scripts**
+1.	The first script creates items (orders) and posts them to an Amazon API Gateway which triggers a Lambda function. The Lambda function writes each item to an Amazon Kinesis Stream (event_sourcing_kinesis)
 
-    b. It writes the item to an Amazon Kinesis Stream
+The Kinesis Stream triggers 2 Lambda functions. Both functions pull the records from the stream. The invoice function writes each record as object to an Amazon S3 bucket. The order function writes each record as an item to an Amazon DynamoDB table.
 
-    c. The Kinesis Stream triggers 2 Lambda functions. Both functions pull the records from the stream, one function writes each record to an Amazon S3 bucket, while the other function writes each record to a Amazon DynamoDB table.
+2.	The second script is a json formatter which renders json data into a readable format.
 
-2. The second script is a json formatter which renders json data into a readable format.
-   
-3. The third script retrieves an item from the event_sourcing_kinesis_order table using the parition key (accountid) and sort key (vendorid)
-   
-4. The fourth script retrieves an item from the event_sourcing_kinesis_fulfillment table using the parition key (accountid) and sort key (vendorid)
+3.	The third script retrieves an item from the event_sourcing_kinesis_order table using the parition key (accountid) and sort key (vendorid)
 
-5. The final script makes a call to Amazon ApiGateway service which in turn calls a triggers a function that generates a pre-signed url for an S3 object.
+4.	The fourth script makes a call to Amazon ApiGateway service which in turn triggers a function that generates a pre-signed url for an S3 object.
+
    
 ## Setup
 
