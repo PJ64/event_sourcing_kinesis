@@ -9,8 +9,9 @@ There are 2 additional functions, one returns the orders from Amazon DynamoDB, t
    
 ## Setup
 
-## Setup
 You will need to download and install [Node.js](https://nodejs.org/en/download/) before you can start using the AWS Cloud Development Kit.
+
+
 This example is developed using the AWS CDK and Typescript, so you will need to install both Typescript and the CDK using the following commands
 ```
 npm install -g typescript
