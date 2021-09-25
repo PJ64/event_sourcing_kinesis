@@ -23,9 +23,13 @@ cdk bootstrap
 ```
 
 The testing scripts can be executed using Jupyter Notebook. There are a few methods for installing Jupyter Notebooks. These instructions will help you get to started with [JupyterLab](https://jupyter.org/install) installation. 
+
 You can also install Jupyter Notebooks as part of [Anaconda](https://docs.anaconda.com/anaconda/install/index.html) installation.
+
 To download this example, you will need to install [Git](https://github.com/git-guides/install-git). After installing git follow these [instructions](https://github.com/git-guides/git-clone) to learn how to clone the repository.
+
 After the repository has been cloned set the command prompt path and run the following command to install the project dependencies.
+
 
 ```bash
 npm install
