@@ -17,7 +17,28 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       shardCount: 1
     });
 
-    //IAM role - Put Order into the stream
+    //Create DynamoDB table
+    const processorder_table = new Table(this, "processorder_table",
+    {
+      tableName: "event_sourcing_kinesis",
+      partitionKey: {
+        name: 'accountid',
+        type: AttributeType.STRING
+      },
+      sortKey: {
+        name: 'vendorid',
+        type: AttributeType.STRING
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
+    //Create S3 bucket
+    const bucket = new Bucket(this, 's3-bucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true
+    });
+
+    //Setup IAM roles and policies
     const role_lambda_stream_put = new Role(this, 'role_lambda_stream_put', {
       roleName: 'event_sourcing_kinesis_stream_put',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
@@ -30,35 +51,6 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       actions: ["kinesis:PutRecord"],
     }));
 
-    //Lambda function - Order stream
-    const lambda_stream_put = new Function(this, "lambda_stream_put", {
-      runtime: Runtime.PYTHON_3_8,
-      code: Code.fromAsset("resources/function_put_stream"),
-      handler: "lambda_function.lambda_handler",
-      functionName: "event_sourcing_kinesis_stream_put",
-      tracing: Tracing.ACTIVE,
-      role: role_lambda_stream_put,
-      environment: {
-        'STREAM': stream.streamName,
-      }
-    });
-        
-    //DynamoDB table - ProcessOrder
-    const processorder_table = new Table(this, "table-processorder",
-      {
-        tableName: "event_sourcing_kinesis_order",
-        partitionKey: {
-          name: 'accountid',
-          type: AttributeType.STRING
-        },
-        sortKey: {
-          name: 'vendorid',
-          type: AttributeType.STRING
-        },
-        removalPolicy: cdk.RemovalPolicy.DESTROY
-    });
-
-    //IAM role - Put Order (ProcessOrder)
     const role_lambda_order_put = new Role(this, 'role_lambda_order_put', {
       roleName: 'event_sourcing_kinesis_order_put',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
@@ -80,8 +72,45 @@ export class EventSourcingKinesisStack extends cdk.Stack {
     });
     role_lambda_order_get.addToPolicy(new PolicyStatement({
       resources: [processorder_table.tableArn],
-      actions: [ "dynamodb:GetItem"],
+      actions: ["dynamodb:GetItem"],
     }));
+
+    const role_lambda_invoice_put = new Role(this, 'role_lambda_invoice_put', {
+      roleName: 'event_sourcing_kinesis_invoice_get',
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+      ]
+    });
+    role_lambda_invoice_put.addToPolicy(new PolicyStatement({
+      resources: [bucket.bucketArn, `${bucket.bucketArn}/*`, stream.streamArn],
+      actions: ["s3:PutObject", "kinesis:GetRecord"],
+    }));
+
+    const role_lambda_invoice_get = new Role(this, 'role_lambda_invoice_get', {
+      roleName: 'event_sourcing_kinesis_invoice_put',
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+      ]
+    });
+    role_lambda_invoice_get.addToPolicy(new PolicyStatement({
+      resources: [bucket.bucketArn, bucket.bucketArn + "/*"],
+      actions: ['s3:GetObject']
+    }));
+
+    //Create Lambda functions
+    const lambda_stream_put = new Function(this, "lambda_stream_put", {
+      runtime: Runtime.PYTHON_3_8,
+      code: Code.fromAsset("resources/function_put_stream"),
+      handler: "lambda_function.lambda_handler",
+      functionName: "event_sourcing_kinesis_stream_put",
+      tracing: Tracing.ACTIVE,
+      role: role_lambda_stream_put,
+      environment: {
+        'STREAM': stream.streamName,
+      }
+    });
 
     //Lambda function - Put Order (ProcessOrder)
     const lambda_order_put = new Function(this, "lambda_order_put", {
@@ -112,39 +141,7 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       }
     });
 
-    //Microservice Invoice
-    //S3 bucket - invoice
-    const bucket = new Bucket(this, 's3-bucket', {
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true
-    });
-
-    //IAM role - Invoice
-    const role_lambda_invoice_put = new Role(this, 'role_lambda_invoice_put', {
-      roleName: 'event_sourcing_kinesis_invoice_get',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
-      ]
-    });
-    role_lambda_invoice_put.addToPolicy(new PolicyStatement({
-      resources: [bucket.bucketArn, `${bucket.bucketArn}/*`, stream.streamArn],
-      actions: ["s3:PutObject","kinesis:GetRecord"],
-    }));
-
-    const role_lambda_invoice_get = new Role(this, 'role_lambda_invoice_get', {
-      roleName: 'event_sourcing_kinesis_invoice_put',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
-      ]
-    });
-    role_lambda_invoice_get.addToPolicy(new PolicyStatement({
-      resources: [bucket.bucketArn, bucket.bucketArn + "/*"],
-      actions: ['s3:GetObject']
-    }));
-
-    //Lambda function - Invoice
+    //Put Invoice
     const lambda_invoice_put = new Function(this, "lambda_invoice_put", {
       runtime: Runtime.PYTHON_3_8,
       code: Code.fromAsset("resources/function_put_invoice"),

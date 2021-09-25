@@ -6,56 +6,46 @@ The event triggers 2 additional Lambda functions. The invoice function writes th
 There are 2 additional functions, one returns the orders from Amazon DynamoDB, the other returns objects from the Amazon S3 bucket.
 
 ![architecture](./images/architecture_4.png "Architecture")
-
-**Jupyter Notebook Scripts**
-1.	The first script creates items (orders) and posts them to an Amazon API Gateway which triggers a Lambda function. The Lambda function writes each item to an Amazon Kinesis Stream (event_sourcing_kinesis)
-
-The Kinesis Stream triggers 2 Lambda functions. Both functions pull the records from the stream. The invoice function writes each record as object to an Amazon S3 bucket. The order function writes each record as an item to an Amazon DynamoDB table.
-
-2.	The second script is a json formatter which renders json data into a readable format.
-
-3.	The third script retrieves an item from the event_sourcing_kinesis_order table using the parition key (accountid) and sort key (vendorid)
-
-4.	The fourth script makes a call to Amazon ApiGateway service which in turn triggers a function that generates a pre-signed url for an S3 object.
-
    
 ## Setup
 
-1. The following prerequisities are required for this example
-  
-```bash
-npm install -g typescript
-npm install -g aws-cdk
+## Setup
+You will need to download and install [Node.js](https://nodejs.org/en/download/) before you can start using the AWS Cloud Development Kit.
+This example is developed using the AWS CDK and Typescript, so you will need to install both Typescript and the CDK using the following commands
 ```
-
-Install Jupyter Notebook following instructions on this ['site'](https://jupyter.org/install).
-
-2. Since this CDK project uses ['Assests'](https://docs.aws.amazon.com/cdk/latest/guide/assets.html), you might need to run the following command to provision resources the AWS CDK will need to perform the deployment.
+npm install -g typescript
+npm install -g aws-cdk@latest
+```
+Since this CDK project uses ['Assests'](https://docs.aws.amazon.com/cdk/latest/guide/assets.html), you might need to run the following command to provision resources the AWS CDK will need to perform the deployment.
 
 ```bash 
 cdk bootstrap
 ```
 
-2. Install the dependencies
+The testing scripts can be executed using Jupyter Notebook. There are a few methods for installing Jupyter Notebooks. These instructions will help you get to started with [JupyterLab](https://jupyter.org/install) installation. 
+You can also install Jupyter Notebooks as part of [Anaconda](https://docs.anaconda.com/anaconda/install/index.html) installation.
+To download this example, you will need to install [Git](https://github.com/git-guides/install-git). After installing git follow these [instructions](https://github.com/git-guides/git-clone) to learn how to clone the repository.
+After the repository has been cloned set the command prompt path and run the following command to install the project dependencies.
 
 ```bash
 npm install
 ```
 
-3. Execute **cdk synth** to synthesize as AWS CloudFormation template
+Execute **cdk synth** to synthesize as AWS CloudFormation template
 
 ```bash
 cdk synth
 ```
 
-4. Execute **cdk deploy** to deploy the template and build the stack
+Execute **cdk deploy** to deploy the template and build the stack
 
 ```bash
 cdk deploy
 ```
-5. Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions.
+Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions.
 
-6. Check the dynamoDB table to view the records and S3 bucket to view the invoices
+
+ Check the dynamoDB table to view the records and S3 bucket to view the invoices
 
 ## Cleanup Commands
 1. Execute command: **cdk destroy**
