@@ -30,28 +30,28 @@ You can also install Jupyter Notebooks as part of [Anaconda](https://docs.anacon
 
 To download this example, you will need to install [Git](https://github.com/git-guides/install-git). After installing git follow these [instructions](https://github.com/git-guides/git-clone) to learn how to clone the repository.
 
-After the repository has been cloned set the command prompt path and run the following command to install the project dependencies.
-
+After the repository has been cloned set the command prompt path to the cloned directory and run the following command to install the project dependencies.
 
 ```bash
 npm install
 ```
 
-Execute **cdk synth** to synthesize as AWS CloudFormation template
+**cdk synth** executes the application which translates the Typescript code into an AWS CloudFormation template.
 
 ```bash
 cdk synth
 ```
 
-Execute **cdk deploy** to deploy the template and build the stack
+After the synth command has generated the template use the  **cdk deploy** command to deploy the template to AWS CloudFormation and build the stack.
 
 ```bash
 cdk deploy
 ```
+
 Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions.
 
 
  Check the dynamoDB table to view the records and S3 bucket to view the invoices
 
 ## Cleanup Commands
-1. Execute command: **cdk destroy**
+Execute command: **cdk destroy**
