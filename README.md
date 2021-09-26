@@ -48,10 +48,9 @@ After the synth command has generated the template use the  **cdk deploy** comma
 cdk deploy
 ```
 
+## Run the Example
 Open the Jupyter Notebook in the **jupyter_notebook directory** follow the instructions.
 
 
- Check the dynamoDB table to view the records and S3 bucket to view the invoices
-
-## Cleanup Commands
-Execute command: **cdk destroy**
+## Cleanup
+From the command prompt execute the following command: **cdk destroy**
