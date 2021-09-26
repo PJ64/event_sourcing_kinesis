@@ -1,9 +1,10 @@
 ## Example
-This example demonstrates an event sourcing architecture using Amazon Kinesis. Records are loaded into the kinesis stream using a Lambda function which is integrated with Amazon API Gateway. The Lambda function takes the input from the gateway and writes it to an Amazon Kinesis data stream.
+This example demonstrates how to use Amazon Kinesis Data Streams in an event sourcing architecture. Records are sent to the Amazon API Gateway which invokes an AWS Lambda function that loads the records into a Kinesis Data Stream. As records are added to the stream additional Lambda functions are invoke to consume the events. 
 
-The event triggers 2 additional Lambda functions. The invoice function writes the event object to an Amazon S3 bucket, and the function writes the event data to Amazon DynamoDB. You would use this pattern or something similar, when you require real-time or near real-time data record processing.
+One function will write the event to an Amazon S3 bucket as an object, at same time the other function will write the event to an Amazon DynamoDB table as an item. The record will remain visible in the queue and can be processed simultaneously any consumer monitoring the queue for new records.
 
-There are 2 additional functions, one returns the orders from Amazon DynamoDB, the other returns objects from the Amazon S3 bucket.
+You would use this pattern or something similar, when you require real-time or near real-time data record processing. 
+
 
 ![architecture](./images/architecture_4.png "Architecture")
    
