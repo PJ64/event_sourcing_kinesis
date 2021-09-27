@@ -42,7 +42,7 @@ npm install
 cdk synth
 ```
 
-After the synth command has generated the template use the  **cdk deploy** command to deploy the template to AWS CloudFormation and build the stack.
+After the synth command has generated the template use the  **cdk deploy** command to deploy the template to AWS CloudFormation and build the stack. You will be prompted to confirm the deployment with y/n.
 
 ```bash
 cdk deploy

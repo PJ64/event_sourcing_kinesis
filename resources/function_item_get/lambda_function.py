@@ -14,7 +14,7 @@ def lambda_handler(event, context):
     queryParam = event["queryStringParameters"]
     
     try:
-        response = table.get_item(Key={'accountid': queryParam['accountid'], 'vendorid':queryParam['vendorid']})
+        response = table.get_item(Key={'accountid': queryParam['accountid'], 'orderdate':queryParam['orderdate']})
 
         return {
             'statusCode': 200,
