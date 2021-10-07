@@ -38,8 +38,9 @@ def WriteRecord(record):
         response = table.put_item(
             Item={
                 'accountid': data['order']['accountid'],
-                'orderdate':data['order']["orderdate"],
+                'orderdate':data['order']["orderdate"][0],
                 'vendorid': data['order']["vendorid"],
+                'city':data['order']["city"],
                 'details':{
                     'coffeetype': data['order']['details']['coffeetype'],
                     'coffeesize': data['order']['details']["coffeesize"],

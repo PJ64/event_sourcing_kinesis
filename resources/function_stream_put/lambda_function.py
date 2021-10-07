@@ -10,21 +10,23 @@ stream_name = (os.environ.get('STREAM'))
 
 def lambda_handler(event, context):
     body = json.loads(event['body'])
-    item = {'order':{ 
-                'accountid': body['order']['accountid'],
-                'vendorid': body['order']["vendorid"],
-                'orderdate':body['order']["orderdate"],
-                'details':{
-                    'coffeetype': body['order']['details']['coffeetype'],
-                    'coffeesize': body['order']['details']["coffeesize"],
-                    'unitprice': body['order']['details']["unitprice"],
-                    'quantity': body['order']['details']["quantity"]
-                }
-            }
-        }
+    # item = {'order':{ 
+    #             'accountid': body['order']['accountid'],
+    #             'vendorid': body['order']["vendorid"],
+    #             'orderdate':body['order']["orderdate"],
+    #             'city':body['order']["city"],
+    #             'details':{
+    #                 'coffeetype': body['order']['details']['coffeetype'],
+    #                 'coffeesize': body['order']['details']["coffeesize"],
+    #                 'unitprice': body['order']['details']["unitprice"],
+    #                 'quantity': body['order']['details']["quantity"]
+    #             }
+    #         }
+    #     }
     try:
         k_client = boto3.client('kinesis')
         response = k_client.put_record(StreamName=stream_name,Data=json.dumps(body), PartitionKey="1")
+        print(response)
         logger.info("Successfully PutRecord %s into stream.",body)
 
         return {
@@ -38,5 +40,5 @@ def lambda_handler(event, context):
         }
 
     except ClientError:
-        logger.exception("Failed PutRecord %s into stream.",item)
+        logger.exception("Failed PutRecord %s into stream.",body)
         raise

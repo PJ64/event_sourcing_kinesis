@@ -1,5 +1,5 @@
 import * as cdk from '@aws-cdk/core';
-import { LambdaIntegration, RestApi, Cors, CognitoUserPoolsAuthorizer, AuthorizationType } from '@aws-cdk/aws-apigateway';
+import { LambdaIntegration, RestApi, Cors } from '@aws-cdk/aws-apigateway';
 import { AttributeType, Table } from '@aws-cdk/aws-dynamodb';
 import { Runtime, Code, Function, Tracing, StartingPosition } from '@aws-cdk/aws-lambda';
 import { KinesisEventSource } from '@aws-cdk/aws-lambda-event-sources'
@@ -141,7 +141,7 @@ export class EventSourcingKinesisStack extends cdk.Stack {
       }
     });
 
-    //Put Invoice
+    //Put_item to DynamoDB
     const lambda_item_put = new Function(this, "lambda_item_put", {
       runtime: Runtime.PYTHON_3_8,
       code: Code.fromAsset("resources/function_item_put"),
