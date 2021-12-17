@@ -1,12 +1,13 @@
 ## Example
 This example demonstrates how to use Amazon Kinesis Data Streams in an event sourcing architecture. Records are sent to the Amazon API Gateway which invokes an AWS Lambda function that loads the records into a Kinesis Data Stream. As records are added to the stream additional Lambda functions are invoke to consume the events. 
 
-One function will write the event to an Amazon S3 bucket as an object, at same time the other function will write the event to an Amazon DynamoDB table as an item. The record will remain visible in the queue and can be processed simultaneously any consumer monitoring the queue for new records.
+This example demonstrates how to use Amazon Kinesis Data Streams in an event sourcing architecture. Records are sent to the Amazon API Gateway which invokes an AWS Lambda function that loads the records into a Kinesis Data Stream. As records are added to the stream Lambda functions are invoke to consume the events.
+As you create the Kinesis trigger, you can configure how the function handles the stream. The Batch size setting determines largest number of records that will be read from your stream at once. The Batch window setting configures the maximum amount of time to gather records before invoking the function.
 
 You would use this pattern or something similar, when you require real-time or near real-time data record processing. 
 
 
-![architecture](./images/architecture_4.png "Architecture")
+![architecture](./images/architecture_1.png "Architecture")
    
 ## Setup
 
@@ -45,7 +46,7 @@ cdk synth
 After the synth command has generated the template use the  **cdk deploy** command to deploy the template to AWS CloudFormation and build the stack. You will be prompted to confirm the deployment with y/n.
 
 ```bash
-cdk deploy
+cdk deploy --all
 ```
 
 ## Run the Example
